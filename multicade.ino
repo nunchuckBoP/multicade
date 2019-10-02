@@ -13,7 +13,7 @@ int state;
 int scan_interval = 10;
 
 // amplifier control variables
-int a_pin = 8;
+int a_pin = 12;
 bool amp_state = LOW;
 
 // temperature setpoint
@@ -26,10 +26,12 @@ double tcv_cv;
 double tcv_kp = 2;
 double tcv_ki = 5;
 double tcv_kd = 1;
+
+// pid loop functions
 PID tcv_pid(&tcv_pv, &tcv_cv, &tcv_sp, tcv_kp, tcv_ki, tcv_kd, DIRECT);
 
 // motion sensor variables
-int ms_pin = 13;
+int ms_pin = 8;
 int ms_state = 0;
 bool pirState;
 int pirDelayOff = 30000; // in mS
@@ -60,12 +62,14 @@ int rb_fadeamount = 2;
 int f_pin = 9;
 
 // screen relay control variables
-int s_pin = 12;
+int s_pin = 13;
 
 // cabinet temperature variables
-int temp_pin = 0;
-int rtemp;
+int temp_pin = A0;
 float temp;
+
+int breath_state = 0;
+int breath_count = 0;
 
 void setup() {
 
@@ -75,7 +79,7 @@ void setup() {
   // put your setup code here, to run once:
 
   // assign the pins
-  // motion sensor - pin 13
+  // motion sensor - pin X
   pinMode(ms_pin, INPUT);
 
   // amplifier relay - pin 08
@@ -111,6 +115,10 @@ void setup() {
   // calculate the delay count for
   // the delay off
   pirPRE = (pirDelayOff / scan_interval);
+
+  // delay a second and let the system
+  // power up
+  delay(1000);
   
 }
 
@@ -140,17 +148,27 @@ float scp(int input, int rmin, int rmax, int smin, int smax){
 
 int fade_up(int pin, int brightness, int fade_amount){
   if(brightness < 255){
-    brightness = brightness + fade_amount;
+    if(brightness + fade_amount <= 254){
+      brightness = brightness + fade_amount; 
+    }
+    else{
+      brightness = 254;
+    }
     analogWrite(pin, brightness);
   }
+  
   return brightness;
 }
 int fade_down(int pin, int brightness, int fade_amount){
   if(brightness > 0){
-    brightness = brightness - fade_amount;
+    if(brightness - fade_amount > 0){
+      brightness = brightness - fade_amount;
+    }
+    else{
+      brightness = 0;
+    }
     analogWrite(pin, brightness);
   }
-  return brightness;
 }
 
 void output_state(int pin_number, bool to_state){
@@ -162,7 +180,7 @@ void output_state(int pin_number, bool to_state){
     Serial.print("output state change; pin=");
     Serial.print(pin_number);
     Serial.print("; state=");
-    Serial.print(to_state);
+    Serial.println(to_state);
     
     digitalWrite(pin_number, to_state);
   }
@@ -174,8 +192,10 @@ void print_info(){
   Serial.print(state);
   Serial.print(" temp=");
   Serial.print(temp);
+  Serial.print(" tcv_pv=");
+  Serial.print(tcv_pv);
   Serial.print(" pirState=");
-  Serial.print(pirState);
+  Serial.println(pirState);
   
 }
 
@@ -183,10 +203,13 @@ void loop() {
   // put your main code here, to run repeatedly:
 
   // read the state of the motion sensor
-  ms_state = digitalRead(ms_pin);
+  //ms_state = digitalRead(ms_pin);
+  ms_state = 1;
+
+  print_info();
   
   if(ms_state == 1){
-    if(pirState = LOW){
+    if(pirState == LOW){
       pirState = HIGH;
       pirACC = 0;
     }
@@ -194,7 +217,7 @@ void loop() {
   if(ms_state == 0){
     if(pirState == HIGH){
       if(pirACC == pirPRE){
-        pirState == LOW;
+        pirState = LOW;
       }
       else{
         pirACC = pirACC + 1;
@@ -205,7 +228,7 @@ void loop() {
   // check the temperature
   // get the raw temp
   tcv_pv = analogRead(temp_pin);
-  temp = scp(rtemp, 0, 1023, -40.0, 302.0);
+  temp = scp(tcv_pv, 0, 1023, -40.0, 257.0);
   
   // compute the pid output
   // assign the output of the fan to the
@@ -255,6 +278,63 @@ void loop() {
   // sensor to not detect a human
   if(state == 3){
 
+     // put the backlight color into a breathing pattern.
+     // while the player is playing.
+     if(breath_state == 0){
+       // fade out
+       b_brightness = fade_down(b_pin, b_brightness, 6);
+       if(b_brightness == 0){
+        if(breath_count >= 5){
+          breath_state = 1;
+          breath_count = 0; 
+        }
+        else{
+          breath_count++;
+        }
+       }
+     }
+     else if(breath_state == 1){
+      // fade up
+      b_brightness = fade_up(b_pin, b_brightness, 3);
+      if(b_brightness == 254){
+        if(breath_count == 2){
+          breath_state = 2;
+          breath_count = 0; 
+        }
+        else{
+          breath_count++;
+        }
+      }
+     }
+     else if(breath_state == 2){
+      // fade out
+      b_brightness = fade_down(b_pin, b_brightness, 3);
+      if(b_brightness <= 100){
+        if(breath_count == 1){
+          breath_state = 3;
+          breath_count = 0; 
+        }
+        else{
+          breath_count++;
+        }
+      }
+     }
+     else if(breath_state == 3){
+      // fade up
+      b_brightness = fade_up(b_pin, b_brightness, 2);
+      if(b_brightness == 254){
+        if(breath_count = 4){
+          breath_state = 0;
+          breath_count = 0; 
+        }
+        else{
+          breath_count++;
+        }
+      }
+     }
+     //Serial.print("b_brightness=");
+     //Serial.println(b_brightness);
+     
      // if a human is not detected in the
      // timeframe, it moves to limbo_down
      // state     
@@ -300,7 +380,6 @@ void loop() {
     if(pirState == HIGH){
       state = 2;
     }
-    
-  }
 
+  }
 }
