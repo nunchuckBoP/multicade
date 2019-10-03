@@ -28,7 +28,9 @@ double tcv_ki = 5;
 double tcv_kd = 1;
 
 // pid loop functions
-PID tcv_pid(&tcv_pv, &tcv_cv, &tcv_sp, tcv_kp, tcv_ki, tcv_kd, DIRECT);
+// PID control action
+// temp goes up above setpoint (PV-SP) = +ERROR
+PID tcv_pid(&tcv_pv, &tcv_cv, &tcv_sp, tcv_kp, tcv_ki, tcv_kd, REVERSE, P_ON_E);
 
 // motion sensor variables
 int ms_pin = 8;
@@ -59,6 +61,8 @@ int rb_brightness = 0;
 int rb_fadeamount = 2;
 
 // fan control variables
+// pin 9 but b_pin is actually
+// output - FIX ME
 int f_pin = 9;
 
 // screen relay control variables
@@ -95,6 +99,7 @@ void setup() {
   pinMode(b_pin, OUTPUT);
   
   // fan FET driver - pin 09
+  pinMode(f_pin, OUTPUT);
 
   // blue buttons pwm pin - pin 06
   pinMode(bb_pin, OUTPUT);
@@ -106,7 +111,7 @@ void setup() {
   tcv_pid.SetMode(AUTOMATIC);
 
   // calculate the setpoint
-  tcv_sp = scp(temp_setpoint, -40.0, 302.0, 0, 1023);
+  tcv_sp = scp(temp_setpoint, -58.0, 842.0, 0, 1023);
 
   // first state is waiting for player
   state = 1;
@@ -177,10 +182,7 @@ void output_state(int pin_number, bool to_state){
 
   if(to_state != c_state){
     
-    Serial.print("output state change; pin=");
-    Serial.print(pin_number);
-    Serial.print("; state=");
-    Serial.println(to_state);
+    Serial.print("output state change; pin="); Serial.print(pin_number); Serial.print("; state="); Serial.println(to_state);
     
     digitalWrite(pin_number, to_state);
   }
@@ -188,15 +190,13 @@ void output_state(int pin_number, bool to_state){
 
 void print_info(){
   
-  Serial.print("state=");
-  Serial.print(state);
-  Serial.print(" temp=");
-  Serial.print(temp);
-  Serial.print(" tcv_pv=");
-  Serial.print(tcv_pv);
-  Serial.print(" pirState=");
-  Serial.println(pirState);
+  Serial.print("state="); Serial.print(state); Serial.print(" temp="); Serial.print(temp); Serial.print(" pirState="); Serial.println(pirState);
   
+}
+void print_pid_info(){
+
+  Serial.print("tcv_pv= "); Serial.print(tcv_pv); Serial.print("  tcv_sp= "); Serial.print(tcv_sp); Serial.print("  tcv_cv= "); Serial.println(tcv_cv);
+
 }
 
 void loop() {
@@ -206,7 +206,8 @@ void loop() {
   //ms_state = digitalRead(ms_pin);
   ms_state = 1;
 
-  print_info();
+  //print_info();
+  print_pid_info();
   
   if(ms_state == 1){
     if(pirState == LOW){
@@ -228,7 +229,7 @@ void loop() {
   // check the temperature
   // get the raw temp
   tcv_pv = analogRead(temp_pin);
-  temp = scp(tcv_pv, 0, 1023, -40.0, 257.0);
+  temp = scp(tcv_pv, 0, 1023, -58.0, 842.0);
   
   // compute the pid output
   // assign the output of the fan to the
@@ -237,8 +238,7 @@ void loop() {
 
   // write the pid output to the analog
   // value
-  int cv = scp(tcv_cv, 0, 1023, 0, 254);
-  analogWrite(f_pin, cv);
+  analogWrite(f_pin, tcv_cv);
 
   // check the state of the machine
   // if it is state is waiting for player
@@ -253,7 +253,7 @@ void loop() {
   }
 
   // if the state is limbo-up, then we will
-  // go through the whole state before we
+  // go through the whole state before we turn
   if(state == 2){
 
     // turn on the relays
@@ -332,8 +332,8 @@ void loop() {
         }
       }
      }
-     //Serial.print("b_brightness=");
-     //Serial.println(b_brightness);
+     Serial.print("b_brightness=");
+     Serial.println(b_brightness);
      
      // if a human is not detected in the
      // timeframe, it moves to limbo_down
