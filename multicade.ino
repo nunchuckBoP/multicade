@@ -17,7 +17,7 @@ int a_pin = 12;
 bool amp_state = LOW;
 
 // temperature setpoint
-double temp_setpoint = 80;
+double temp_setpoint = 25;
 
 // pid variables
 double tcv_pv;
@@ -123,7 +123,7 @@ void setup() {
 
   // delay a second and let the system
   // power up
-  delay(1000);
+  delay(500);
   
 }
 
@@ -174,6 +174,8 @@ int fade_down(int pin, int brightness, int fade_amount){
     }
     analogWrite(pin, brightness);
   }
+
+  return brightness;
 }
 
 void output_state(int pin_number, bool to_state){
@@ -332,8 +334,9 @@ void loop() {
         }
       }
      }
-     Serial.print("b_brightness=");
-     Serial.println(b_brightness);
+
+     // debug lighting profile information.
+     //Serial.print("b_brightness="); Serial.print(b_brightness); Serial.print("  breath_state="); Serial.println(breath_state);
      
      // if a human is not detected in the
      // timeframe, it moves to limbo_down
