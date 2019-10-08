@@ -1,5 +1,3 @@
-#include <PID_v1.h>
-
 // declare the variables
 // -------------state------------
 // 1 = waiting player
@@ -16,26 +14,12 @@ int scan_interval = 10;
 int a_pin = 12;
 bool amp_state = LOW;
 
-// temperature setpoint
-double temp_setpoint = 25;
-
-// pid variables
-double tcv_pv;
-double tcv_sp;
-double tcv_cv;
-double tcv_kp = 2;
-double tcv_ki = 5;
-double tcv_kd = 1;
-
-// pid loop functions
-// PID control action
-// temp goes up above setpoint (PV-SP) = +ERROR
-PID tcv_pid(&tcv_pv, &tcv_cv, &tcv_sp, tcv_kp, tcv_ki, tcv_kd, REVERSE, P_ON_E);
-
 // motion sensor variables
 int ms_pin = 8;
 int ms_state = 0;
-bool pirState;
+
+// pir motion detector variables
+boolean pirState;
 int pirDelayOff = 30000; // in mS
 int pirPRE;
 int pirACC = 0;
@@ -61,15 +45,16 @@ int rb_brightness = 0;
 int rb_fadeamount = 2;
 
 // fan control variables
-// pin 9 but b_pin is actually
-// output - FIX ME
-int f_pin = 9;
+int f_pin = 2;
+float fan_on_sp = 85;
+float fan_off_sp = 80;
 
 // screen relay control variables
-int s_pin = 13;
+int s_pin = 4;
 
 // cabinet temperature variables
 int temp_pin = A0;
+int temp_raw;
 float temp;
 
 int breath_state = 0;
@@ -107,12 +92,6 @@ void setup() {
   // red buttons pwm pin - pin 05
   pinMode(rb_pin, OUTPUT);
 
-  // setup the pid
-  tcv_pid.SetMode(AUTOMATIC);
-
-  // calculate the setpoint
-  tcv_sp = scp(temp_setpoint, -58.0, 842.0, 0, 1023);
-
   // first state is waiting for player
   state = 1;
   pirState = LOW;
@@ -120,10 +99,15 @@ void setup() {
   // calculate the delay count for
   // the delay off
   pirPRE = (pirDelayOff / scan_interval);
-
-  // delay a second and let the system
-  // power up
-  delay(500);
+  
+  // spin the fan to be sure that it
+  // is working
+  output_state(f_pin, HIGH);
+  
+  // delay two seconds and let the system
+  // power up. Let the fan spin around for
+  // a bit.
+  delay(200);
   
 }
 
@@ -195,11 +179,6 @@ void print_info(){
   Serial.print("state="); Serial.print(state); Serial.print(" temp="); Serial.print(temp); Serial.print(" pirState="); Serial.println(pirState);
   
 }
-void print_pid_info(){
-
-  Serial.print("tcv_pv= "); Serial.print(tcv_pv); Serial.print("  tcv_sp= "); Serial.print(tcv_sp); Serial.print("  tcv_cv= "); Serial.println(tcv_cv);
-
-}
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -207,9 +186,6 @@ void loop() {
   // read the state of the motion sensor
   //ms_state = digitalRead(ms_pin);
   ms_state = 1;
-
-  //print_info();
-  print_pid_info();
   
   if(ms_state == 1){
     if(pirState == LOW){
@@ -230,17 +206,18 @@ void loop() {
 
   // check the temperature
   // get the raw temp
-  tcv_pv = analogRead(temp_pin);
-  temp = scp(tcv_pv, 0, 1023, -58.0, 842.0);
+  temp_raw = analogRead(temp_pin);
+  temp = scp(temp_raw, 0, 1023, -58.0, 842.0);
   
-  // compute the pid output
-  // assign the output of the fan to the
-  // pid output.
-  tcv_pid.Compute();
-
-  // write the pid output to the analog
-  // value
-  analogWrite(f_pin, tcv_cv);
+  // control the fan based on what the temperature
+  // is in the cabinet. The setpoints are defined in
+  // the begining of the program.
+  if(temp > fan_on_sp){
+    output_state(f_pin, HIGH);
+  }
+  if(temp <= fan_off_sp){
+    output_state(f_pin, LOW); 
+  }
 
   // check the state of the machine
   // if it is state is waiting for player
