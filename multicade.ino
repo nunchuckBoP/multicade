@@ -10,22 +10,22 @@ state last_system_state;
 // ALWAYS the pin number
 
 // ANALOG INPUTS
-AnalogInput temp_sensor(A0, -58.0, 842.0);
+AnalogInput temp_sensor(A0, -58.0, 842.0, "cabinet temp");
 
 // DISCRETE INPUTS
 PIR_Sensor pir(8);
 
 // DISCRETTE OUTPUTS
-DiscreteOutput status_led(13);
-DiscreteOutput Fan(2);
-DiscreteOutput Amp(12);
-DiscreteOutput Screen(4);
+DiscreteOutput status_led(13, "status LED");
+DiscreteOutput Fan(2, "Cooling Fan");
+DiscreteOutput Amp(12, "Amplifier");
+DiscreteOutput Screen(4, "Monitor Screen");
 
 // PWM OUTPUTS
-LED player1(5);
-LED player2(6);
-LED blue_backlight(10);
-LED marquee(11);
+LED player1(5, "Player 1 Lights");
+LED player2(6, "Player 2 Lights");
+LED blue_backlight(10, "Blue Backlight");
+LED marquee(11, "Marquee Lights");
 
 // CONTROL CLASS OBJECTS
 SoftwareSwitch temp_ss1(high, 85.0, 80.0);
@@ -79,6 +79,9 @@ void loop() {
     case SLEEPING:
       if(pir.state == true){
         system_state = FADE_UP;
+
+        // reset the time here
+        active_tmr.reset();
       }
       else{
         // disable amplifier pin
@@ -98,6 +101,8 @@ void loop() {
         // if the lights are up, then move to the
         // next state
         if(blue_backlight.get_brightness() >= 254 & marquee.get_brightness() >= 254){
+
+          // change the state to active.
           system_state = ACTIVE;
         }
       break;

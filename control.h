@@ -32,6 +32,7 @@ class Timer{
       }
       void reset(){
         ACC = 0;
+        enabled = false;
         complete = false;
         start_time = 0;
       }

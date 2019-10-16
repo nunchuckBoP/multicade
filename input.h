@@ -9,12 +9,15 @@ class AnalogInput{
     const int Smin;
     const int Smax;
     public:
-        AnalogInput(int attach_to, int scaled_min, int scaled_max):
+        AnalogInput(int attach_to, int scaled_min, int scaled_max, String description):
             pin(attach_to), 
             Smin(scaled_max), 
-            Smax(scaled_max)
+            Smax(scaled_max),
+            desc(description)
         {
         }
+        
+    String desc;
     void setup(){
         // put the setup functions in here
     }
@@ -57,10 +60,10 @@ class PIR_Sensor{
 
         void loop(){
 
-            int pin;
-            pin = digitalRead(pin);
+            int value;
+            value = digitalRead(pin);
 
-            if(pin == HIGH){
+            if(value == HIGH){
               state = true;
             }
             else{
@@ -69,8 +72,8 @@ class PIR_Sensor{
             
             if(prev_state != state){
                 print_info();
+                prev_state = state;
             }
-            int prev_state = state;
         }
 };
 #endif

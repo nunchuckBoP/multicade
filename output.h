@@ -6,12 +6,14 @@
 class DiscreteOutput{
     const int pin;
     public:
-        DiscreteOutput(int attach_to):
-            pin(attach_to)
+        DiscreteOutput(int attach_to, String description):
+            pin(attach_to),
+            desc(description)
         {
         }
         // public variables.
         bool state;
+        String desc;
         void setup(){
           pinMode(pin, OUTPUT);
         };
@@ -19,7 +21,8 @@ class DiscreteOutput{
           if(state != value){
             digitalWrite(pin, value);
             state = value;
-            Serial.print("Digital Out:"); Serial.print(pin); Serial.print(" State:"); Serial.println(state);
+            // digital out (desc) State: state
+            Serial.print("Digital Out ("); Serial.print(desc); Serial.print(")  "); Serial.print(" State:"); Serial.println(state);
           }
         };
 };
@@ -34,11 +37,13 @@ class LED{
     int brightness = 0;
 
     public:
-        LED(int attach_to):
-            pin(attach_to)
+        LED(int attach_to, String description):
+            pin(attach_to),
+            desc(description)
         {
         }
-    
+
+        String desc;
         void setup(){
             pinMode(pin, OUTPUT);
         }
@@ -50,6 +55,7 @@ class LED{
             }
             else{
                 brightness = brightness + fade_amount;
+                print_info();
             }
             analogWrite(pin, brightness);
         }
@@ -59,11 +65,15 @@ class LED{
             }
             else{
                 brightness = brightness - fade_amount;
+                print_info();
             }
             analogWrite(pin, brightness);
         }
         int get_brightness(){
           return brightness;
+        }
+        void print_info(){
+          Serial.print("LED "); Serial.print(desc); Serial.print("  brightness:"); Serial.println(brightness);
         }
 };
 #endif
