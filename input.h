@@ -16,7 +16,7 @@ class AnalogInput{
             desc(description)
         {
         }
-        
+    // declare the public variables
     String desc;
     void setup(){
         // put the setup functions in here
@@ -26,6 +26,7 @@ class AnalogInput{
         float reading;
         raw_input = analogRead(pin);
         reading = ((raw_input - Rmin) * ((Smax - Smin)/(Rmax - Rmin))) + Smin;
+        Serial.print("Analog Input ("); Serial.print(desc); Serial.print("): "); Serial.print(reading);
         return reading;
     }
 };
