@@ -40,7 +40,7 @@ class Timer{
         complete = false;
         start_time = 0;
       }
-      void update_pre(double new_pre){
+      void set_pre(double new_pre){
           PRE = new_pre;
       }
 };

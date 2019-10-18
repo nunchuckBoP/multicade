@@ -1,7 +1,7 @@
 #ifndef _OUTPUT_H
 #define _OUTPUT_H
 
-#include <control.h>
+#include "control.h"
 
 // output library
 
@@ -38,12 +38,15 @@ class LED{
     const int fade_min = 0;
     int brightness = 0;
     int profile_step = 0;
-    Timer TMR(3000);
+    double timer_pre = 3000;
+    Timer Timer1;
+        
 
     public:
         LED(int attach_to, String description):
             pin(attach_to),
-            desc(description)
+            desc(description),
+            Timer1(3000)
         {
         }
 
@@ -80,6 +83,10 @@ class LED{
             int fade_amounts[] = {5, 2, 0};
             int step_levels[] = {0, 254, 0};
             double wait_times[] = {0, 0, 3000};
+
+            // update the timer preset
+            Timer1.set_pre(wait_times[profile_step]);
+            
             if(profile_step == 0){
                 // fade out
                 fade_out(fade_amounts[profile_step]);
@@ -97,9 +104,9 @@ class LED{
             }
             else if(profile_step == 2){
                 // wait a time
-                TMR.tick();
-                if (TMR.complete){
-                    TMR.reset();
+                Timer1.tick();
+                if (Timer1.complete){
+                    Timer1.reset();
                     profile_step = 0;
                 }
             }
