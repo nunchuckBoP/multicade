@@ -113,6 +113,10 @@ void loop() {
 
       // turn on the audio amplifier
       Amp.set_output(true);
+
+      // put the blue backlight 
+      // LED in fade_profile1
+      blue_backlight.fade_profile1();
       
       if(pir.state == true){
         active_tmr.reset();

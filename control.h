@@ -16,9 +16,11 @@ class Timer{
       }
       // public variables
       double ACC = 0;
+      bool TT = false;
       bool complete = false;
       void tick(){
         if(enabled & not(complete)){
+          TT = true;
           ACC = millis() - start_time;
           Serial.print("Timer Timing: "); Serial.println(ACC);
           if(ACC >= PRE){
@@ -28,13 +30,18 @@ class Timer{
         else{
           start_time = millis();
           enabled = true;
+          TT = true;
         }
       }
       void reset(){
         ACC = 0;
         enabled = false;
+        TT = false;
         complete = false;
         start_time = 0;
+      }
+      void update_pre(double new_pre){
+          PRE = new_pre;
       }
 };
 
