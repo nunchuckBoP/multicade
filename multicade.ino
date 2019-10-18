@@ -116,7 +116,7 @@ void loop() {
 
       // put the blue backlight 
       // LED in fade_profile1
-      blue_backlight.fade_profile1();
+      blue_backlight.fade_profile();
       
       if(pir.state == true){
         active_tmr.reset();

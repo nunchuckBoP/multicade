@@ -40,7 +40,6 @@ class LED{
     int profile_step = 0;
     double timer_pre = 3000;
     Timer Timer1;
-        
 
     public:
         LED(int attach_to, String description):
@@ -76,7 +75,7 @@ class LED{
             }
             analogWrite(pin, brightness);
         }
-        void fade_profile1(){
+        void fade_profile(FadeStep fade_steps[]){
             // fade profile 1 - breathing
             // effect
             // fade out, fade up, wait, then repeat
