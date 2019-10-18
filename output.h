@@ -90,7 +90,7 @@ class LED{
             }
             else if(profile_step == 1){
                 // fade up
-                fade_up(fade_amounts[profile_step])
+                fade_up(fade_amounts[profile_step]);
                 if(brightness >= step_levels[profile_step]){
                     profile_step = profile_step + 1;
                 }
@@ -102,9 +102,7 @@ class LED{
                     TMR.reset();
                     profile_step = 0;
                 }
-
             }
-
         }
         int get_brightness(){
           return brightness;
