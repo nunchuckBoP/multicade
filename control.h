@@ -57,6 +57,9 @@ class Timer{
         complete = false;
         start_time = 0;
       }
+      double get_pre(){
+        return PRE;
+      }
       void set_pre(double new_pre){
           PRE = new_pre;
       }

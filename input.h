@@ -11,24 +11,44 @@ class AnalogInput{
     public:
         AnalogInput(int attach_to, int scaled_min, int scaled_max, String description):
             pin(attach_to), 
-            Smin(scaled_max), 
+            Smin(scaled_min), 
             Smax(scaled_max),
             desc(description)
         {
         }
-    // declare the public variables
-    String desc;
-    void setup(){
-        // put the setup functions in here
-    }
-    float reading(){
-        int raw_input;
-        float reading;
-        raw_input = analogRead(pin);
-        reading = ((raw_input - Rmin) * ((Smax - Smin)/(Rmax - Rmin))) + Smin;
-        Serial.print("Analog Input ("); Serial.print(desc); Serial.print("): "); Serial.print(reading);
-        return reading;
-    }
+        // declare the public variables
+        String desc;
+        void setup(){
+            // put the setup functions in here
+        }
+        float reading(){
+            // Rmin = 0
+            // Rmax = 1023
+            // Smin = -58
+            // Smax = 842
+            // last raw reading 122 @ about 50 degrees in garage
+            
+            int raw_input;
+            float reading;
+    
+            // get the raw input
+            raw_input = analogRead(pin);
+    
+            // calculates the reading based on the parameters
+            float n = Smax - Smin;
+            float d = Rmax - Rmin;
+            float s = (n / d);
+            reading =(s * raw_input) + Smin;
+
+            // it was not printing this line...
+            //Serial.print("Rmin="); Serial.print(Rmin); Serial.print("   Rmax="); Serial.print(Rmax);
+            //Serial.print("    Smin="); Serial.print(Smin); Serial.print("   Smax=");
+            //Serial.print(Smax); Serial.print("   raw_input="); Serial.println(raw_input);
+            
+            //Serial.print("raw_input="); Serial.println(raw_input);
+            //Serial.print("Analog Input ("); Serial.print(desc); Serial.print("): "); Serial.println(reading);
+            return reading;
+        }
 };
 
 class PIR_Sensor{

@@ -51,6 +51,10 @@ void setup() {
   // initialize the variables
   system_state = SLEEPING;
   last_system_state = FADE_OUT;
+
+  Serial.println("System Warming Up 60 sec");
+  delay(10000);
+  Serial.println("Warmup complete.");
   
 }
 
@@ -116,7 +120,8 @@ void loop() {
 
       // put the blue backlight 
       // LED in fade_profile1
-      blue_backlight.fade_profile();
+      blue_backlight.fade_profile(blue_backlight.fade_profile1, 
+                                  blue_backlight.fade_profile1_step_count);
       
       if(pir.state == true){
         active_tmr.reset();
