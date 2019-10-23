@@ -48,7 +48,7 @@ class LED{
             Timer1(3000),
 
             // fade profile 1 - breathing effect
-            fade_profile1({FadeStep(15, false, 0, 0), FadeStep(8, true, 254, 0), FadeStep(0, false, 0, 6000)})
+            fade_profile1({FadeStep(3, false, 0, 500), FadeStep(1, true, 254, 0), FadeStep(0, false, 0, 6000)})
         {
         }
 
@@ -66,7 +66,7 @@ class LED{
             }
             else{
                 brightness = brightness + fade_amount;
-                print_info();
+                //print_info();
             }
             analogWrite(pin, brightness);
         }
@@ -76,7 +76,7 @@ class LED{
             }
             else{
                 brightness = brightness - fade_amount;
-                print_info();
+                //print_info();
             }
             analogWrite(pin, brightness);
         }
@@ -89,7 +89,8 @@ class LED{
             // if the step index is greater then or
             // equal to the step count then reset it to
             // zero.
-            if(profile_step >= (step_count-1)){
+            if(profile_step >= step_count){
+              //Serial.println("Restarting fade profile.");
               profile_step = 0;
             }
 
@@ -104,12 +105,16 @@ class LED{
                 // trigger timer
                 if(Timer1.complete == false && Timer1.get_pre() > 0){
                   Timer1.tick();
+                  Serial.print("TIMER_ACC="); Serial.print(Timer1.ACC); Serial.print("   COMPLETE="); Serial.println(Timer1.complete);
                 }
-                else{
+                else if(Timer1.complete || Timer1.get_pre() == 0){
                   // increment the profile
                   // step
                   profile_step = profile_step + 1;
                   Timer1.reset();                  
+                }
+                else{
+                  
                 }
               }
               else{
@@ -121,18 +126,22 @@ class LED{
                 // trigger the timer
                 if(Timer1.complete == false && Timer1.get_pre() > 0){
                   Timer1.tick();
+                  Serial.print("TIMER_ACC="); Serial.print(Timer1.ACC); Serial.print("   COMPLETE="); Serial.println(Timer1.complete);
                 }
-                else{
+                else if(Timer1.complete || Timer1.get_pre() == 0){
                   // increment the profile step
                   profile_step = profile_step + 1;
                   Timer1.reset();
+                }
+                else{
+                  
                 }
               }
               else{
                 fade_out(current_step.famount);
               }
             }  
-            print_info();          
+            //print_info();          
         }
         int get_brightness(){
           return brightness;

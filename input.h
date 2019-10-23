@@ -1,6 +1,8 @@
 #ifndef _INPUT_H
 #define _INPUT_H
 
+#include "control.h"
+
 // input library
 class AnalogInput{
     const int pin;
@@ -8,12 +10,15 @@ class AnalogInput{
     const int Rmax = 1023;
     const int Smin;
     const int Smax;
+    Timer PrintTMR;
+    
     public:
         AnalogInput(int attach_to, int scaled_min, int scaled_max, String description):
             pin(attach_to), 
             Smin(scaled_min), 
             Smax(scaled_max),
-            desc(description)
+            desc(description),
+            PrintTMR(3000)
         {
         }
         // declare the public variables
@@ -40,14 +45,18 @@ class AnalogInput{
             float s = (n / d);
             reading =(s * raw_input) + Smin;
 
-            // it was not printing this line...
-            //Serial.print("Rmin="); Serial.print(Rmin); Serial.print("   Rmax="); Serial.print(Rmax);
-            //Serial.print("    Smin="); Serial.print(Smin); Serial.print("   Smax=");
-            //Serial.print(Smax); Serial.print("   raw_input="); Serial.println(raw_input);
-            
-            //Serial.print("raw_input="); Serial.println(raw_input);
-            //Serial.print("Analog Input ("); Serial.print(desc); Serial.print("): "); Serial.println(reading);
+            if(PrintTMR.complete){
+              print_info(reading);
+              PrintTMR.reset();
+            }
+            else{
+              PrintTMR.tick();
+            }
+
             return reading;
+        }
+        void print_info(float reading){
+            Serial.print("Analog Input ("); Serial.print(desc); Serial.print("): "); Serial.println(reading);
         }
 };
 

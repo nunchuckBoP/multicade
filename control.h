@@ -39,7 +39,7 @@ class Timer{
         if(enabled & not(complete)){
           TT = true;
           ACC = millis() - start_time;
-          Serial.print("Timer Timing: "); Serial.println(ACC);
+          //Serial.print("Timer Timing: "); Serial.println(ACC);
           if(ACC >= PRE){
             complete = true;   
           }

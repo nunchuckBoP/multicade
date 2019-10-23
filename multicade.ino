@@ -60,6 +60,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  double loop_start = millis();
 
   // get the pir state
   pir.loop();
@@ -97,17 +98,27 @@ void loop() {
       break;
     case FADE_UP:
         // fade up the blue_backlight
-        blue_backlight.fade_up(3);
+        blue_backlight.fade_up(1);
 
         // fade up the marquee light
-        marquee.fade_up(3);
+        marquee.fade_up(1);
+
+        // fade up player 1
+        player1.fade_up(1);
+
+        // fade up player 2
+        player2.fade_up(1);
 
         // if the lights are up, then move to the
         // next state
-        if(blue_backlight.get_brightness() >= 254 & marquee.get_brightness() >= 254){
+        if(blue_backlight.get_brightness() >= 254 & marquee.get_brightness() >= 254 &
+            player1.get_brightness() >= 254 & player2.get_brightness() >= 254){
 
           // change the state to active.
           system_state = ACTIVE;
+        }
+        else{
+          
         }
       break;
     case ACTIVE:
@@ -150,4 +161,10 @@ void loop() {
     Serial.print("system_state="); Serial.println(system_state);
     last_system_state = system_state;
   }
+
+  double scan_time = millis() - loop_start;
+  //Serial.print("Scan time:"); Serial.println(scan_time);
+
+  // small delay
+  delay(10);
 }
