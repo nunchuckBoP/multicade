@@ -5,23 +5,6 @@
 enum control_action{high, low};
 enum switch_output {on, off};
 
-class FadeStep{
-    public:
-      int famount;
-      bool fdir;
-      int slevel;
-      double wtime;
-  
-      FadeStep(int fade_amount, bool fade_direction, int step_level, double wait_time):
-        famount(fade_amount),
-        fdir(fade_direction),
-        slevel(step_level),
-        wtime(wait_time)
-        {
-          
-        }
-};
-
 class Timer{
     double PRE;
     double start_time;
@@ -36,18 +19,23 @@ class Timer{
       bool TT = false;
       bool complete = false;
       void tick(){
-        if(enabled & not(complete)){
+        if(enabled && not(complete)){
           TT = true;
           ACC = millis() - start_time;
-          //Serial.print("Timer Timing: "); Serial.println(ACC);
           if(ACC >= PRE){
-            complete = true;   
+            complete = true;
+            ACC = PRE;   
           }
         }
-        else{
+        else if(not(enabled)){
           start_time = millis();
           enabled = true;
           TT = true;
+        }
+        else{
+          // the timer is complete
+          enabled = true;
+          TT = false;
         }
       }
       void reset(){

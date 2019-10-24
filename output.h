@@ -30,124 +30,133 @@ class DiscreteOutput{
 };
 
 class LED{
-    // LED IS ON A FADER USING
-    // A PWM OUTPUT PIN. These are
-    // all private class variables.
     const int pin;
-    const int fade_max = 254;
-    const int fade_min = 0;
+    const String desc;
+    Timer FadeTMR;
+    Timer WaitTMR;
+    Timer PrintTMR;
     int brightness = 0;
+    int max_out = 254;
     int profile_step = 0;
-    double timer_pre = 3000;
-    Timer Timer1;
-
+    bool is_verbose;
     public:
-        LED(int attach_to, String description):
-            pin(attach_to),
-            desc(description),
-            Timer1(3000),
+      LED(int attach_to, String description, bool enable_print):
+          pin(attach_to),
+          desc(description),
+          is_verbose(enable_print),
+          FadeTMR(1500),
+          WaitTMR(0),
+          PrintTMR(5000)
+          {
+                          
+          }
+      void setup(){
+        pinMode(pin, OUTPUT);
+      }
+      void fade(bool up, double fade_time, double wait_time){
 
-            // fade profile 1 - breathing effect
-            fade_profile1({FadeStep(3, false, 0, 500), FadeStep(1, true, 254, 0), FadeStep(0, false, 0, 6000)})
-        {
-        }
+        // put the preset into the fade timer
+        FadeTMR.set_pre(fade_time);
 
-        String desc;
-        FadeStep fade_profile1[3];
-        int fade_profile1_step_count = 3;
-        void setup(){
-            pinMode(pin, OUTPUT);
-        }
-        void update_led_brightness(){
-        }
-        void fade_up(int fade_amount){
-            if(brightness + fade_amount > fade_max){
-                brightness = fade_max;
-            }
-            else{
-                brightness = brightness + fade_amount;
-                //print_info();
-            }
-            analogWrite(pin, brightness);
-        }
-        void fade_out(int fade_amount){
-            if(brightness - fade_amount < fade_min){
-                brightness = fade_min;
-            }
-            else{
-                brightness = brightness - fade_amount;
-                //print_info();
-            }
-            analogWrite(pin, brightness);
-        }
-        void fade_profile(FadeStep fade_steps[], int step_count){
+        // put the preset into the wait timer
+        WaitTMR.set_pre(wait_time);
 
-            // gets the number of steps in the profile
-            //int step_count = sizeof(fade_steps) / sizeof(fade_steps[0]);
-            //Serial.print("step_count: "); Serial.print(step_count); Serial.print("  brightness="); Serial.println(brightness);
-
-            // if the step index is greater then or
-            // equal to the step count then reset it to
-            // zero.
-            if(profile_step >= step_count){
-              //Serial.println("Restarting fade profile.");
-              profile_step = 0;
+        // starts the timer.
+        if(FadeTMR.complete == false){
+          FadeTMR.tick();
+        }
+        else{
+          if(WaitTMR.get_pre() > 0){
+            if(WaitTMR.complete == false){
+              WaitTMR.tick();
             }
-
-            // get the current step
-            FadeStep current_step = fade_steps[profile_step];
+          }        
+        }
+        
+        // calculates the buffer values
+        float bup = (max_out / fade_time) * FadeTMR.ACC;
+        float bd = ((max_out / fade_time) * (-1) * FadeTMR.ACC) + max_out;
+        
+        if(up){
+          int bup_int = floor(bup) - brightness;
+          if(bup_int > 0){
+            brightness = brightness + bup_int;
+          }
+        }
+        else{
+          int bd_int = brightness - floor(bd);
+          if(bd_int > 0){
+            brightness = brightness - bd_int; 
+          }
+        }
+        
+        // print information control
+        PrintTMR.tick();
+        if(PrintTMR.complete){
+          // print the information
+          print_info();
           
-            // update the timer preset
-            Timer1.set_pre(current_step.wtime);
+          // reset the print timer
+          PrintTMR.reset();
+        }
 
-            if(current_step.fdir){
-              if(brightness >= current_step.slevel){
-                // trigger timer
-                if(Timer1.complete == false && Timer1.get_pre() > 0){
-                  Timer1.tick();
-                  Serial.print("TIMER_ACC="); Serial.print(Timer1.ACC); Serial.print("   COMPLETE="); Serial.println(Timer1.complete);
-                }
-                else if(Timer1.complete || Timer1.get_pre() == 0){
-                  // increment the profile
-                  // step
-                  profile_step = profile_step + 1;
-                  Timer1.reset();                  
-                }
-                else{
-                  
-                }
-              }
-              else{
-                fade_up(current_step.famount);
-              }
-            }
-            else{
-              if(brightness <= current_step.slevel){
-                // trigger the timer
-                if(Timer1.complete == false && Timer1.get_pre() > 0){
-                  Timer1.tick();
-                  Serial.print("TIMER_ACC="); Serial.print(Timer1.ACC); Serial.print("   COMPLETE="); Serial.println(Timer1.complete);
-                }
-                else if(Timer1.complete || Timer1.get_pre() == 0){
-                  // increment the profile step
-                  profile_step = profile_step + 1;
-                  Timer1.reset();
-                }
-                else{
-                  
-                }
-              }
-              else{
-                fade_out(current_step.famount);
-              }
-            }  
-            //print_info();          
+        if(brightness < 0){
+          brightness = 0;
         }
-        int get_brightness(){
-          return brightness;
+        if(brightness > 254){
+          brightness = 254;
         }
-        void print_info(){
-          Serial.print("LED "); Serial.print(desc); Serial.print("  brightness:"); Serial.println(brightness);
+        analogWrite(pin, brightness);
+      }
+      void print_info(){
+        if(is_verbose){
+          Serial.print("LED Output:"); Serial.print(desc); Serial.print("  brightness="); Serial.print(brightness);
+          Serial.print(" profile_step="); Serial.print(profile_step); 
+          Serial.print("  FadeTMR.TT="); Serial.print(FadeTMR.TT); Serial.print(" FadeTMR.ACC="); Serial.print(FadeTMR.ACC);
+          Serial.print("  WaitTMR.TT="); Serial.print(WaitTMR.TT); Serial.print(" WaitTMR.ACC="); Serial.println(WaitTMR.ACC);
         }
+        
+      }
+      void fade_profile1(){
+        if(profile_step == 0){
+          // fade down, wait 500 ms
+          fade(false, 1500, 500);
+        }
+        else if(profile_step == 1){
+          // fade up, wait 5000 ms
+          fade(true, 3000, 5000);
+        }
+        else{
+          // don't do anything
+        }
+        if(fade_complete()){
+          if(profile_step < 1){
+            reset_profile();
+            profile_step = profile_step + 1;
+          }
+          else{
+            reset_profile();
+          }
+        }
+      }
+      bool fade_complete(){
+        if((FadeTMR.complete && WaitTMR.complete) || (FadeTMR.complete && WaitTMR.get_pre() <= 0)){
+          return true;
+        }
+        else{
+          return false;
+        }
+      }
+      int get_brightness(){
+        return brightness;
+      }
+      void reset(){
+        FadeTMR.reset();
+        WaitTMR.reset();
+      }
+      void reset_profile(){
+        reset();
+        profile_step = 0;
+      }
 };
 #endif

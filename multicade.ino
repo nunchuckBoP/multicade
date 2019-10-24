@@ -22,10 +22,10 @@ DiscreteOutput Amp(12, "Amplifier");
 DiscreteOutput Screen(4, "Monitor Screen");
 
 // PWM OUTPUTS
-LED player1(5, "Player 1 Lights");
-LED player2(6, "Player 2 Lights");
-LED blue_backlight(10, "Blue Backlight");
-LED marquee(11, "Marquee Lights");
+LED player1(5, "Player 1 Lights", false);
+LED player2(6, "Player 2 Lights", false);
+LED blue_backlight(10, "Blue Backlight", true);
+LED marquee(11, "Marquee Lights", false);
 
 // CONTROL CLASS OBJECTS
 SoftwareSwitch temp_ss1(high, 85.0, 80.0);
@@ -98,24 +98,27 @@ void loop() {
       break;
     case FADE_UP:
         // fade up the blue_backlight
-        blue_backlight.fade_up(1);
+        blue_backlight.fade(true, 5000, 1000);
 
         // fade up the marquee light
-        marquee.fade_up(1);
-
+        marquee.fade(true, 5000, 1000);
+        
         // fade up player 1
-        player1.fade_up(1);
+        player1.fade(true, 5000, 1000);
 
         // fade up player 2
-        player2.fade_up(1);
+        player2.fade(true, 5000, 1000);
 
         // if the lights are up, then move to the
         // next state
-        if(blue_backlight.get_brightness() >= 254 & marquee.get_brightness() >= 254 &
-            player1.get_brightness() >= 254 & player2.get_brightness() >= 254){
+        if(blue_backlight.fade_complete() && marquee.fade_complete() &
+            player1.fade_complete() && player2.fade_complete()){
 
-          // change the state to active.
-          system_state = ACTIVE;
+              // reset the fades
+              blue_backlight.reset(); marquee.reset(); player1.reset(); player2.reset();
+  
+              // change the state to active.
+              system_state = ACTIVE;
         }
         else{
           
@@ -131,14 +134,14 @@ void loop() {
 
       // put the blue backlight 
       // LED in fade_profile1
-      blue_backlight.fade_profile(blue_backlight.fade_profile1, 
-                                  blue_backlight.fade_profile1_step_count);
+      blue_backlight.fade_profile1();
       
       if(pir.state == true){
         active_tmr.reset();
       }
       else{
         active_tmr.tick();
+        //Serial.print("active_tmr.ACC=");Serial.println(active_tmr.ACC);
         if(active_tmr.complete){
           system_state = FADE_OUT;
           active_tmr.reset();
@@ -147,12 +150,13 @@ void loop() {
       break;
     case FADE_OUT:
       // fade out the back blue light
-      blue_backlight.fade_out(2);
+      blue_backlight.fade(false, 5000, 1000);
 
       // fade out the marquee
-      marquee.fade_out(2);
+      marquee.fade(false, 5000, 1000);
 
-      if(blue_backlight.get_brightness() <= 0 & marquee.get_brightness() <= 0){
+      if(blue_backlight.fade_complete() && marquee.fade_complete() <= 0){
+        blue_backlight.reset(); marquee.reset();
         system_state = SLEEPING;
       }
       break;
@@ -166,5 +170,5 @@ void loop() {
   //Serial.print("Scan time:"); Serial.println(scan_time);
 
   // small delay
-  delay(10);
+  delay(100);
 }
